@@ -15,7 +15,7 @@ class Opro::Oauth::AuthController < OproController
     auth_grant  = Opro::Oauth::AuthGrant.find_or_create_by_user_app(current_user, application)
 
     # add permission changes if there are any
-    auth_grant.update_permissions(params[:permissions])
+    auth_grant.update_permissions(params[:permissions]&.to_unsafe_h)
     redirect_to auth_grant.redirect_uri_for(params[:redirect_uri], params[:state])
   end
 
