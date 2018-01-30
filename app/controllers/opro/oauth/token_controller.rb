@@ -2,8 +2,8 @@
 # codes and refresh_tokens for access_tokens
 
 class Opro::Oauth::TokenController < OproController
-  before_filter      :opro_authenticate_user!,    :except => [:create]
-  skip_before_filter :verify_authenticity_token,  :only   => [:create]
+  before_action      :opro_authenticate_user!,    :except => [:create]
+  skip_before_action :verify_authenticity_token,  :only   => [:create], :raise => false
 
 
   def create
@@ -12,7 +12,13 @@ class Opro::Oauth::TokenController < OproController
 
     if application.present? && (@auth_grant = auth_grant_for(application, params)).present?
       @auth_grant.refresh!
-      render :create
+
+      render json: {
+        access_token: @auth_grant.access_token,
+        token_type: Opro.token_type || 'bearer',
+        refresh_token: @auth_grant.refresh_token,
+        expires_in: @auth_grant.expires_in
+      }
     else
       render_error debug_msg(params, application)
     end

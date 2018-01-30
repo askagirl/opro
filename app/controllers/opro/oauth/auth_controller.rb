@@ -1,6 +1,6 @@
 class Opro::Oauth::AuthController < OproController
-  before_filter      :opro_authenticate_user!
-  before_filter      :ask_user!,                  :only   => [:create]
+  before_action      :opro_authenticate_user!
+  before_action      :ask_user!,                  :only   => [:create]
 
   def new
     @redirect_uri = params[:redirect_uri]
@@ -15,7 +15,7 @@ class Opro::Oauth::AuthController < OproController
     auth_grant  = Opro::Oauth::AuthGrant.find_or_create_by_user_app(current_user, application)
 
     # add permission changes if there are any
-    auth_grant.update_permissions(params[:permissions])
+    auth_grant.update_permissions(params[:permissions]&.to_unsafe_h)
     redirect_to auth_grant.redirect_uri_for(params[:redirect_uri], params[:state])
   end
 
@@ -24,6 +24,8 @@ class Opro::Oauth::AuthController < OproController
   # When a user is sent to authorize an application they must first accept the authorization
   # if they've already authed the app, they skip this section
   def ask_user!
+    params.permit!
+
     if user_granted_access_before?(current_user, params)
       # Re-Authorize the application, do not ask the user
       params.delete(:permissions) ## Delete permissions supplied by client app, this was a security hole
